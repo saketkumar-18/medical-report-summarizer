@@ -1,0 +1,10 @@
+.git
+__pycache__
+*.pyc
+tests/
+eval/
+.pytest_cache
+.env
+.env.*
+*.md
+run_local.bat

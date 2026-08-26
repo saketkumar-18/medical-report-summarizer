@@ -1,0 +1,64 @@
+{
+  "samples": [
+    {
+      "id": "chest-ct-pe",
+      "title": "CT Chest — suspected pulmonary embolism",
+      "tier": "critical",
+      "report": "CT CHEST WITH CONTRAST\n\nCLINICAL HISTORY: 58-year-old male with acute onset dyspnea and pleuritic chest pain. Rule out pulmonary embolism.\n\nTECHNIQUE: Axial helical CT of the chest was performed following intravenous contrast administration.\n\nFINDINGS: There is a filling defect within the right lower lobe pulmonary artery extending into segmental branches, consistent with acute pulmonary embolism. No evidence of right heart strain. The lungs show mild dependent atelectasis. No pleural effusion or pneumothorax. The heart and great vessels are unremarkable. No mediastinal or hilar lymphadenopathy. No acute osseous abnormality.\n\nIMPRESSION: Acute pulmonary embolism involving the right lower lobe pulmonary artery with segmental extension. No CT evidence of right heart strain.\n\nRECOMMENDATION: Urgent clinical correlation and anticoagulation assessment."
+    },
+    {
+      "id": "mammo-birads4",
+      "title": "Mammogram — suspicious breast lesion (BI-RADS 4)",
+      "tier": "urgent",
+      "report": "SCREENING MAMMOGRAM\n\nCLINICAL HISTORY: 62-year-old female, routine screening. No prior breast cancer.\n\nFINDINGS: The breast tissue is heterogeneously dense. In the upper outer quadrant of the left breast there is a 1.4 cm irregular, spiculated mass with associated fine pleomorphic calcifications. No similar finding on the right. No dominant axillary lymphadenopathy.\n\nIMPRESSION: Irregular spiculated mass in the left breast, BI-RADS category 4 — suspicious abnormality. Tissue diagnosis is recommended.\n\nRECOMMENDATION: Ultrasound-guided core biopsy of the left breast mass is recommended."
+    },
+    {
+      "id": "pathology-colon",
+      "title": "Pathology — colon biopsy (adenocarcinoma)",
+      "tier": "urgent",
+      "report": "SURGICAL PATHOLOGY REPORT\n\nCLINICAL HISTORY: 67-year-old male with mass lesion in sigmoid colon found on colonoscopy. Biopsies submitted.\n\nGROSS DESCRIPTION: Received are four tan-white soft tissue fragments measuring 0.4 to 0.6 cm in greatest dimension. Entirely submitted.\n\nMICROSCOPIC DESCRIPTION: Sections show colonic mucosa infiltrated by malignant glands with desmoplastic stroma. Tumor cells show enlarged hyperchromatic nuclei and frequent mitoses. The findings are consistent with moderately differentiated invasive adenocarcinoma.\n\nFINAL DIAGNOSIS: Sigmoid colon, biopsy: Invasive adenocarcinoma, moderately differentiated.\n\nRECOMMENDATION: Clinical and radiologic staging is recommended. Immunohistochemistry for mismatch repair proteins may be considered."
+    },
+    {
+      "id": "mri-brain-normal",
+      "title": "MRI Brain — normal study",
+      "tier": "benign",
+      "report": "MRI BRAIN WITHOUT CONTRAST\n\nCLINICAL HISTORY: 34-year-old female with chronic headaches. Rule out intracranial pathology.\n\nTECHNIQUE: Multiplanar multisequence MRI of the brain was performed without intravenous contrast.\n\nFINDINGS: The brain parenchyma demonstrates normal signal intensity. There is no evidence of acute infarct, intracranial hemorrhage, mass, or mass effect. The ventricles and sulci are normal in size and configuration. The midline structures are centered. No extra-axial collection. The visualized paranasal sinuses and mastoid air cells are clear. No acute osseous abnormality.\n\nIMPRESSION: Normal MRI of the brain. No acute intracranial abnormality."
+    },
+    {
+      "id": "us-kidney-stone",
+      "title": "Ultrasound KUB — obstructing stone",
+      "tier": "urgent",
+      "report": "ULTRASOUND KIDNEYS URETERS BLADDER\n\nCLINICAL HISTORY: 45-year-old male with right flank pain and hematuria. Evaluate for renal calculus.\n\nFINDINGS: The right kidney measures 11.2 cm and shows mild hydronephrosis. A 7 mm echogenic focus with posterior acoustic shadowing is seen at the right ureterovesical junction, consistent with an obstructing ureteral calculus. The left kidney is normal in size and echogenicity with no hydronephrosis or calculus. The urinary bladder is well distended with smooth walls and no intraluminal lesion.\n\nIMPRESSION: 7 mm obstructing right distal ureteral calculus with mild right hydronephrosis.\n\nRECOMMENDATION: Urology consultation. Non-contrast CT may be considered for further evaluation."
+    },
+    {
+      "id": "cxr-pneumonia",
+      "title": "Chest X-ray — pneumonia",
+      "tier": "urgent",
+      "report": "CHEST X-RAY PA AND LATERAL\n\nCLINICAL HISTORY: 71-year-old female with fever, productive cough and shortness of breath.\n\nFINDINGS: There is a patchy airspace opacity in the right lower lobe consistent with pneumonia. No pleural effusion or pneumothorax. The heart size is normal. The mediastinal contours are unremarkable. No acute osseous abnormality.\n\nIMPRESSION: Right lower lobe pneumonia. Clinical correlation recommended."
+    },
+    {
+      "id": "ct-head-bleed",
+      "title": "CT Head — subdural hematoma",
+      "tier": "critical",
+      "report": "CT HEAD WITHOUT CONTRAST\n\nCLINICAL HISTORY: 79-year-old male after fall, altered sensorium. Rule out intracranial hemorrhage.\n\nFINDINGS: There is a crescentic hyperdense collection along the left cerebral convexity measuring up to 1.1 cm in thickness, consistent with acute subdural hematoma. There is associated 6 mm rightward midline shift with effacement of the left lateral ventricle. No skull fracture identified. The remaining brain parenchyma shows age-related involutional changes. No other intracranial hemorrhage.\n\nIMPRESSION: Acute left subdural hematoma with 6 mm midline shift and mass effect. Urgent neurosurgical consultation recommended."
+    },
+    {
+      "id": "thyroid-us-tirads3",
+      "title": "Thyroid Ultrasound — probably benign nodule",
+      "tier": "routine",
+      "report": "ULTRASOUND THYROID\n\nCLINICAL HISTORY: 41-year-old female with palpable thyroid nodule.\n\nFINDINGS: The thyroid gland is normal in size. In the right lobe there is a 1.8 cm predominantly cystic nodule with a small eccentric solid component and no suspicious calcifications. No increased vascularity. The left lobe and isthmus are unremarkable. No cervical lymphadenopathy.\n\nIMPRESSION: 1.8 cm predominantly cystic right thyroid nodule, low suspicion pattern. Consider TI-RADS 3. Follow-up ultrasound in 12 months is suggested."
+    },
+    {
+      "id": "liver-mri-cirrhosis",
+      "title": "MRI Liver — cirrhosis with surveillance nodule",
+      "tier": "urgent",
+      "report": "MRI LIVER WITH CONTRAST\n\nCLINICAL HISTORY: 59-year-old male with known chronic liver disease. Surveillance for hepatocellular carcinoma.\n\nFINDINGS: The liver shows nodular contour and heterogeneous signal consistent with cirrhosis. There is a 1.6 cm arterially enhancing lesion in segment VI with washout on portal venous phase, LI-RADS 5, consistent with hepatocellular carcinoma. Mild splenomegaly is noted. Small volume ascites. No biliary dilatation. The portal vein is patent.\n\nIMPRESSION: Cirrhosis with a 1.6 cm LI-RADS 5 lesion in segment VI consistent with hepatocellular carcinoma. Multidisciplinary discussion recommended."
+    },
+    {
+      "id": "fnac-thyroid-benign",
+      "title": "FNAC Thyroid — benign",
+      "tier": "benign",
+      "report": "CYTOPATHOLOGY REPORT — FNAC\n\nCLINICAL HISTORY: 36-year-old female with thyroid nodule, ultrasound-guided FNAC performed.\n\nDESCRIPTION: Smears show abundant colloid with sheets of benign follicular cells in a honeycomb arrangement. No nuclear features of papillary carcinoma are seen. No atypia or malignancy identified. Background shows macrophages and cyst fluid.\n\nDIAGNOSIS: Thyroid nodule, FNAC: Benign follicular nodule (Bethesda category II).\n\nRECOMMENDATION: Clinical and ultrasound follow-up as indicated. Negative for malignant cells."
+    }
+  ]
+}

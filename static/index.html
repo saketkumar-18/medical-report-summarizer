@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedSumm — Medical Report Summarizer + Triage Assistant</title>
+<meta name="description" content="Summarize radiology and pathology reports in plain language with automated urgency triage. A reading aid, not a diagnosis.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A9%BA%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #f4f7fa;
+    --card: #ffffff;
+    --ink: #16283a;
+    --muted: #5b7186;
+    --line: #dde6ee;
+    --accent: #0e7490;
+    --accent-soft: #e0f2f7;
+    --critical: #b91c1c; --critical-bg: #fef2f2; --critical-line: #fecaca;
+    --urgent: #b45309;   --urgent-bg: #fffbeb;   --urgent-line: #fde68a;
+    --routine: #1d4ed8;  --routine-bg: #eff6ff;  --routine-line: #bfdbfe;
+    --benign: #15803d;   --benign-bg: #f0fdf4;   --benign-line: #bbf7d0;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(22,40,58,.08), 0 4px 16px rgba(22,40,58,.06);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.55;
+  }
+  header {
+    background: linear-gradient(135deg, #0c4a6e 0%, #0e7490 60%, #0891b2 100%);
+    color: #fff; padding: 28px 20px 22px;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+  header .wrap { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .logo { font-size: 34px; }
+  header h1 { font-size: 22px; font-weight: 700; letter-spacing: .2px; }
+  header p.sub { font-size: 13.5px; opacity: .92; width: 100%; margin-top: 4px; max-width: 820px; }
+  .badge-row { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+  .badge {
+    background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.28);
+    border-radius: 999px; padding: 4px 12px; font-size: 12px; white-space: nowrap;
+  }
+  .disclaimer-bar {
+    background: #fffbeb; border-bottom: 1px solid #fde68a; color: #92400e;
+    font-size: 13px; padding: 9px 16px; text-align: center;
+  }
+  nav.tabs { display: flex; gap: 6px; margin: 18px auto 0; max-width: 1180px; padding: 0 16px; }
+  nav.tabs button {
+    border: 1px solid var(--line); background: var(--card); color: var(--muted);
+    padding: 9px 18px; border-radius: 10px 10px 0 0; cursor: pointer; font-size: 14px;
+    font-weight: 600; border-bottom: none;
+  }
+  nav.tabs button.active { color: var(--accent); background: var(--card); box-shadow: inset 0 2px 0 var(--accent); }
+  main { max-width: 1180px; margin: 0 auto; padding: 18px 16px 60px; }
+  .grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 18px; align-items: start; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 18px;
+  }
+  .card h2 { font-size: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  textarea {
+    width: 100%; min-height: 300px; border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px; font-family: Consolas, "SF Mono", monospace; font-size: 12.5px;
+    resize: vertical; color: var(--ink); background: #fbfdfe;
+  }
+  textarea:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; border: none; cursor: pointer;
+    background: var(--accent); color: #fff; font-size: 14.5px; font-weight: 600;
+    padding: 11px 22px; border-radius: 10px; transition: filter .15s;
+  }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:disabled { opacity: .55; cursor: not-allowed; }
+  .btn.ghost { background: var(--card); color: var(--accent); border: 1px solid var(--accent); }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+  .samples { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .chip {
+    border: 1px solid var(--line); background: #fbfdfe; color: var(--muted);
+    border-radius: 999px; padding: 5px 12px; font-size: 12px; cursor: pointer;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .chip .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  .dot.critical { background: var(--critical); } .dot.urgent { background: var(--urgent); }
+  .dot.routine { background: var(--routine); } .dot.benign { background: var(--benign); }
+  .triage-card { border-width: 2px; }
+  .triage-card.critical { background: var(--critical-bg); border-color: var(--critical-line); }
+  .triage-card.urgent   { background: var(--urgent-bg);   border-color: var(--urgent-line); }
+  .triage-card.routine  { background: var(--routine-bg);  border-color: var(--routine-line); }
+  .triage-card.benign   { background: var(--benign-bg);   border-color: var(--benign-line); }
+  .triage-head { display: flex; align-items: center; gap: 12px; }
+  .triage-icon { font-size: 30px; }
+  .triage-label { font-size: 17px; font-weight: 700; }
+  .triage-card.critical .triage-label { color: var(--critical); }
+  .triage-card.urgent .triage-label { color: var(--urgent); }
+  .triage-card.routine .triage-label { color: var(--routine); }
+  .triage-card.benign .triage-label { color: var(--benign); }
+  .triage-advice { margin-top: 10px; font-size: 14px; }
+  .findings-list { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .finding {
+    display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px;
+    background: rgba(255,255,255,.7); border-radius: 8px; padding: 8px 10px;
+  }
+  .finding .tag {
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
+    border-radius: 5px; padding: 2px 7px; white-space: nowrap; margin-top: 1px;
+  }
+  .tag.critical { background: var(--critical); color: #fff; }
+  .tag.urgent { background: var(--urgent); color: #fff; }
+  .tag.routine { background: var(--routine); color: #fff; }
+  .tag.benign { background: var(--benign); color: #fff; }
+  .finding .unc { color: var(--muted); font-style: italic; }
+  ul.plain { margin: 6px 0 0 18px; }
+  ul.plain li { margin-bottom: 6px; font-size: 14px; }
+  .patient-box {
+    background: var(--accent-soft); border: 1px solid #b6e2ec; border-radius: 10px;
+    padding: 12px 14px; font-size: 14.5px; margin-top: 8px;
+  }
+  .patient-box .src { font-size: 11px; color: var(--muted); margin-top: 6px; }
+  .meas { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .meas span {
+    background: #f1f5f9; border: 1px solid var(--line); border-radius: 8px;
+    padding: 5px 10px; font-size: 12.5px;
+  }
+  details.gloss { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin-top: 8px; }
+  details.gloss summary { cursor: pointer; font-weight: 600; font-size: 14px; color: var(--accent); }
+  .gloss-item { padding: 8px 0; border-bottom: 1px dashed var(--line); font-size: 13.5px; }
+  .gloss-item:last-child { border-bottom: none; }
+  .gloss-item b { color: var(--accent); text-transform: capitalize; }
+  .empty-state { text-align: center; color: var(--muted); padding: 60px 20px; }
+  .empty-state .big { font-size: 44px; margin-bottom: 10px; }
+  .error-box {
+    background: var(--critical-bg); border: 1px solid var(--critical-line); color: var(--critical);
+    border-radius: 10px; padding: 12px 14px; font-size: 14px; margin-top: 12px;
+  }
+  .spinner {
+    width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,.35); border-top-color: #fff;
+    border-radius: 50%; animation: spin .7s linear infinite; display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  /* Eval dashboard */
+  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .metric {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 16px; text-align: center; box-shadow: var(--shadow);
+  }
+  .metric .val { font-size: 28px; font-weight: 800; color: var(--accent); }
+  .metric .val.perfect { color: var(--benign); }
+  .metric .lbl { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  .ok { color: var(--benign); font-weight: 700; } .bad { color: var(--critical); font-weight: 700; }
+  .tier-pill { border-radius: 999px; padding: 2px 10px; font-size: 11.5px; font-weight: 700; color: #fff; }
+  .tier-pill.critical { background: var(--critical); } .tier-pill.urgent { background: var(--urgent); }
+  .tier-pill.routine { background: var(--routine); } .tier-pill.benign { background: var(--benign); }
+  .safety-note { font-size: 13px; color: var(--muted); margin-top: 10px; }
+  footer { text-align: center; color: var(--muted); font-size: 12.5px; padding: 24px 16px 40px; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="logo">🩺</div>
+    <div>
+      <h1>MedSumm — Medical Report Summarizer + Triage Assistant</h1>
+    </div>
+    <div class="badge-row">
+      <span class="badge">Clinical NLP</span>
+      <span class="badge">Negation-aware</span>
+      <span class="badge">Safety-evaluated</span>
+    </div>
+    <p class="sub">Paste a radiology or pathology report to get a plain-language summary, an automated urgency triage level, and a jargon glossary — with a safety-gated AI rewrite layer.</p>
+  </div>
+</header>
+
+<div class="disclaimer-bar">
+  ⚠️ <b>Not a medical device.</b> This is an automated reading aid and does not replace a doctor's judgment. Always review results with your treating clinician. In an emergency, call your local emergency number.
+</div>
+
+<nav class="tabs">
+  <button id="tab-analyze" class="active" onclick="showTab('analyze')">📄 Analyze a report</button>
+  <button id="tab-eval" onclick="showTab('eval')">🧪 Safety evaluation</button>
+  <button id="tab-about" onclick="showTab('about')">🛡️ How it works</button>
+</nav>
+
+<main>
+  <!-- ============ ANALYZE TAB ============ -->
+  <section id="pane-analyze">
+    <div class="grid">
+      <div class="card">
+        <h2>📋 Report text</h2>
+        <textarea id="report-input" placeholder="Paste the full radiology or pathology report here (findings, impression, diagnosis sections)..."></textarea>
+        <div class="row">
+          <button class="btn" id="analyze-btn" onclick="analyze()">🔍 Summarize &amp; Triage</button>
+          <button class="btn ghost" onclick="clearAll()">Clear</button>
+          <label style="font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;">
+            <input type="checkbox" id="use-llm" checked> Plain-language AI rewrite
+          </label>
+        </div>
+        <div id="error-box" class="error-box hidden"></div>
+        <h2 style="margin-top:18px;">🧪 Try a sample report</h2>
+        <div class="samples" id="samples"></div>
+      </div>
+
+      <div id="results">
+        <div class="card empty-state" id="empty-state">
+          <div class="big">🩻</div>
+          <p><b>No report analyzed yet.</b></p>
+          <p style="font-size:13.5px;margin-top:6px;">Paste a report on the left, or click a sample to see the triage engine in action.</p>
+        </div>
+        <div id="result-cards" class="hidden" style="display:flex;flex-direction:column;gap:14px;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ EVAL TAB ============ -->
+  <section id="pane-eval" class="hidden">
+    <div id="eval-content">
+      <div class="empty-state card"><div class="spinner" style="border-color:var(--accent-soft);border-top-color:var(--accent);margin:0 auto;"></div><p style="margin-top:10px;">Loading evaluation results…</p></div>
+    </div>
+  </section>
+
+  <!-- ============ ABOUT TAB ============ -->
+  <section id="pane-about" class="hidden">
+    <div class="grid">
+      <div class="card">
+        <h2>🧠 How the engine works</h2>
+        <ul class="plain" style="font-size:14px;">
+          <li><b>Section parser</b> splits the report into clinical history, findings, impression and recommendation using radiology/pathology header conventions.</li>
+          <li><b>Red-flag detector</b> scans for ~70 curated clinical patterns (PE, stroke, hemorrhage, fractures, BI-RADS/Lung-RADS/TI-RADS scores, malignancy terms…) mapped to four urgency tiers.</li>
+          <li><b>Negation &amp; uncertainty engine</b> (ConNeg-style) decides whether each finding is affirmed, negated or uncertain. <i>"No pneumothorax" is never flagged; "cannot exclude PE" always is.</i></li>
+          <li><b>Extractive summarizer</b> builds the plain summary only from text present in the report — no invented content.</li>
+          <li><b>Safety-gated LLM layer</b> (optional) rewrites the summary into plainer language, then a <b>faithfulness gate</b> verifies every medical term it used is grounded in the source. If it drifts, the rewrite is rejected and the grounded extractive summary is shown instead.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>🛡️ Safety design principles</h2>
+        <ul class="plain" style="font-size:14px;">
+          <li><b>Conservative escalation:</b> uncertain findings are escalated, never suppressed — missing a possible emergency is worse than over-flagging.</li>
+          <li><b>Deterministic core:</b> triage never depends on an LLM. The AI layer is cosmetic and gated.</li>
+          <li><b>Explicit benign clearance dominates</b> routine mentions (e.g., "nodule" in the history of a biopsy that came back benign).</li>
+          <li><b>Input guards:</b> prompt-injection patterns and malformed input are rejected before processing.</li>
+          <li><b>Continuous evaluation:</b> a 30-case labeled safety set measures tier accuracy, must-flag recall (sensitivity) and negation safety on every change — see the Safety evaluation tab.</li>
+        </ul>
+        <p class="safety-note">This project is a capstone demonstration of clinical NLP with safety evaluation. It is not validated for clinical use and must not be used to make medical decisions.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  MedSumm v1.0 · Clinical NLP capstone · Deterministic triage core + safety-gated LLM layer · Synthetic evaluation data, no real patient information.
+</footer>
+
+<script>
+const TIER_ICON = { critical: "🚨", urgent: "⚠️", routine: "📅", benign: "✅" };
+let SAMPLES = [];
+
+function showTab(name) {
+  ["analyze", "eval", "about"].forEach(t => {
+    document.getElementById("pane-" + t).classList.toggle("hidden", t !== name);
+    document.getElementById("tab-" + t).classList.toggle("active", t === name);
+  });
+  if (name === "eval") loadEval();
+}
+
+async function loadSamples() {
+  try {
+    const r = await fetch("/api/samples");
+    const data = await r.json();
+    SAMPLES = data.samples || [];
+    const box = document.getElementById("samples");
+    box.innerHTML = "";
+    SAMPLES.forEach(s => {
+      const b = document.createElement("button");
+      b.className = "chip";
+      b.innerHTML = `<span class="dot ${s.tier}"></span>${s.title}`;
+      b.onclick = () => { document.getElementById("report-input").value = s.report; analyze(); };
+      box.appendChild(b);
+    });
+  } catch (e) { console.error(e); }
+}
+
+function clearAll() {
+  document.getElementById("report-input").value = "";
+  document.getElementById("result-cards").classList.add("hidden");
+  document.getElementById("empty-state").classList.remove("hidden");
+  document.getElementById("error-box").classList.add("hidden");
+}
+
+function showError(msg) {
+  const box = document.getElementById("error-box");
+  box.textContent = msg;
+  box.classList.remove("hidden");
+}
+
+async function analyze() {
+  const report = document.getElementById("report-input").value.trim();
+  const btn = document.getElementById("analyze-btn");
+  const useLlm = document.getElementById("use-llm").checked;
+  document.getElementById("error-box").classList.add("hidden");
+  if (!report) { showError("Please paste a report first."); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Analyzing…';
+  try {
+    const r = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ report, use_llm: useLlm }),
+    });
+    const data = await r.json();
+    if (!r.ok) { showError(data.detail || "Analysis failed."); return; }
+    renderResults(data);
+  } catch (e) {
+    showError("Network error: " + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = "🔍 Summarize &amp; Triage";
+  }
+}
+
+function esc(s) {
+  const d = document.createElement("div");
+  d.textContent = s == null ? "" : String(s);
+  return d.innerHTML;
+}
+
+function renderResults(data) {
+  const t = data.triage;
+  const cards = document.getElementById("result-cards");
+  document.getElementById("empty-state").classList.add("hidden");
+  cards.classList.remove("hidden");
+
+  let html = "";
+
+  // --- Triage card ---
+  html += `<div class="card triage-card ${t.tier}">
+    <div class="triage-head">
+      <div class="triage-icon">${TIER_ICON[t.tier] || "ℹ️"}</div>
+      <div>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:700;">Automated triage level</div>
+        <div class="triage-label">${esc(t.label)}</div>
+      </div>
+    </div>
+    <div class="triage-advice">${esc(t.advice)}</div>`;
+  if (t.findings && t.findings.length) {
+    html += `<div class="findings-list">`;
+    t.findings.slice(0, 8).forEach(f => {
+      html += `<div class="finding">
+        <span class="tag ${f.tier}">${f.tier}</span>
+        <span>${f.uncertain ? '<span class="unc">possible —</span> ' : ""}${esc(f.reason)}</span>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+  html += `</div>`;
+
+  // --- Plain summary ---
+  html += `<div class="card"><h2>📝 Summary in plain words</h2><ul class="plain">`;
+  (data.plain_summary || []).forEach(b => html += `<li>${esc(b)}</li>`);
+  html += `</ul>`;
+  if (data.patient_summary && data.patient_summary.accepted) {
+    const ps = data.patient_summary;
+    html += `<div class="patient-box">${esc(ps.text)}
+      <div class="src">✨ AI plain-language rewrite · faithfulness ${(ps.faithfulness * 100).toFixed(0)}% · source: ${ps.source}</div>
+    </div>`;
+  } else if (data.patient_summary && !data.patient_summary.accepted) {
+    html += `<div class="patient-box" style="background:#fff7ed;border-color:#fed7aa;">
+      🛡️ The AI rewrite was <b>rejected by the faithfulness gate</b> (score ${(data.patient_summary.faithfulness * 100).toFixed(0)}%) — showing the grounded extractive summary instead.
+    </div>`;
+  }
+  html += `</div>`;
+
+  // --- Key findings + measurements ---
+  if ((data.key_findings && data.key_findings.length) || (data.measurements && data.measurements.length)) {
+    html += `<div class="card">`;
+    if (data.key_findings && data.key_findings.length) {
+      html += `<h2>🔎 Key sentences from the report</h2><ul class="plain">`;
+      data.key_findings.forEach(k => html += `<li>${esc(k)}</li>`);
+      html += `</ul>`;
+    }
+    if (data.measurements && data.measurements.length) {
+      html += `<h2 style="margin-top:14px;">📏 Measurements mentioned</h2><div class="meas">`;
+      data.measurements.forEach(m => html += `<span><b>${esc(m.value)} ${esc(m.unit)}</b>${m.context ? " · " + esc(m.context) : ""}</span>`);
+      html += `</div>`;
+    }
+    html += `</div>`;
+  }
+
+  // --- Glossary ---
+  if (data.glossary && data.glossary.length) {
+    html += `<div class="card"><details class="gloss" open>
+      <summary>📖 Jargon glossary (${data.glossary.length} terms found in this report)</summary>`;
+    data.glossary.forEach(g => html += `<div class="gloss-item"><b>${esc(g.term)}</b> — ${esc(g.definition)}</div>`);
+    html += `</details></div>`;
+  }
+
+  // --- Disclaimer ---
+  html += `<div class="card" style="background:#f8fafc;"><p style="font-size:12.5px;color:var(--muted);">⚠️ ${esc(data.disclaimer)}</p></div>`;
+
+  cards.innerHTML = html;
+  cards.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+let evalLoaded = false;
+async function loadEval() {
+  if (evalLoaded) return;
+  try {
+    const r = await fetch("/api/eval");
+    const data = await r.json();
+    const box = document.getElementById("eval-content");
+    if (!data.metrics) {
+      box.innerHTML = `<div class="card empty-state"><p>Evaluation results not bundled yet. Run <code>python -m eval.run_eval</code> to generate them.</p></div>`;
+      return;
+    }
+    const m = data.metrics;
+    const pct = v => (v * 100).toFixed(1) + "%";
+    const perfect = v => v >= 0.999 ? "perfect" : "";
+    let html = `<div class="metrics-grid">
+      <div class="metric"><div class="val ${perfect(m.tier_accuracy_exact)}">${pct(m.tier_accuracy_exact)}</div><div class="lbl">Triage tier accuracy (exact)<br>${m.n_cases} labeled cases</div></div>
+      <div class="metric"><div class="val ${perfect(m.must_flag_recall)}">${pct(m.must_flag_recall)}</div><div class="lbl">Must-flag recall (sensitivity)<br>${m.must_flag_hit}/${m.must_flag_total} critical findings caught</div></div>
+      <div class="metric"><div class="val ${perfect(m.negation_safety)}">${pct(m.negation_safety)}</div><div class="lbl">Negation safety<br>${m.must_not_flag_violations}/${m.must_not_flag_total} false alarms</div></div>
+      <div class="metric"><div class="val">${(m.mean_faithfulness * 100).toFixed(1)}%</div><div class="lbl">Mean summary faithfulness<br>(grounded in source text)</div></div>
+      <div class="metric"><div class="val ${perfect(m.tier_accuracy_within_one)}">${pct(m.tier_accuracy_within_one)}</div><div class="lbl">Within ±1 tier accuracy</div></div>
+    </div>`;
+    html += `<div class="card"><h2>🧪 Case-by-case results (30 synthetic labeled reports)</h2>
+      <div style="overflow-x:auto;"><table>
+      <thead><tr><th>Case</th><th>Expected</th><th>Predicted</th><th>Tier ✓</th><th>Must-flag</th><th>Negation safe</th></tr></thead><tbody>`;
+    data.cases.forEach(c => {
+      const tierOk = c.exact_match ? '<span class="ok">✓</span>' : '<span class="bad">✗</span>';
+      const flagOk = c.must_flag_missed.length === 0 ? '<span class="ok">✓ all caught</span>' : '<span class="bad">missed: ' + esc(c.must_flag_missed.join(", ")) + "</span>";
+      const negOk = c.must_not_flag_violations.length === 0 ? '<span class="ok">✓</span>' : '<span class="bad">flagged: ' + esc(c.must_not_flag_violations.join(", ")) + "</span>";
+      html += `<tr>
+        <td>${esc(c.id)}</td>
+        <td><span class="tier-pill ${c.expected_tier}">${c.expected_tier}</span></td>
+        <td><span class="tier-pill ${c.predicted_tier}">${c.predicted_tier}</span></td>
+        <td>${tierOk}</td><td>${flagOk}</td><td>${negOk}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>
+      <p class="safety-note">Evaluation set uses fully synthetic reports (no real PHI). Must-flag recall measures whether every clinically required finding was detected; negation safety measures whether negated findings ("no pneumothorax") were wrongly flagged. Run <code>python -m eval.run_eval</code> to regenerate.</p>
+    </div>`;
+    box.innerHTML = html;
+    evalLoaded = true;
+  } catch (e) {
+    document.getElementById("eval-content").innerHTML = `<div class="card error-box">Failed to load eval results: ${esc(e.message)}</div>`;
+  }
+}
+
+loadSamples();
+</script>
+</body>
+</html>
