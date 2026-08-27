@@ -12,12 +12,32 @@ def _bool(name: str, default: bool) -> bool:
 DEPLOYMENT = os.getenv("MEDSUMM_DEPLOYMENT", "local").strip().lower()  # local | serverless
 
 # --- LLM backend (optional abstractive layer) --------------------------------
-# Uses the Hugging Face Inference router (OpenAI-compatible) with an HF token.
+# Preferred: OpenRouter (OpenAI-compatible). Fallback: Hugging Face router.
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip() or None
+OPENROUTER_BASE_URL = os.getenv(
+    "OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"
+).rstrip("/")
 HF_TOKEN = os.getenv("HF_TOKEN", "").strip() or None
 HF_BASE_URL = os.getenv("HF_BASE_URL", "https://router.huggingface.co/v1").rstrip("/")
-LLM_MODEL = os.getenv("MEDSUMM_LLM_MODEL", "meta-llama/Llama-3.1-8B-Instruct")
-LLM_ENABLED = _bool("MEDSUMM_LLM_ENABLED", True) and bool(HF_TOKEN)
-LLM_TIMEOUT_S = float(os.getenv("MEDSUMM_LLM_TIMEOUT", "25"))
+
+if OPENROUTER_API_KEY:
+    LLM_BACKEND = "openrouter"
+    LLM_MODEL = os.getenv("MEDSUMM_LLM_MODEL", "minimax/minimax-m3:free")
+    LLM_BASE_URL = OPENROUTER_BASE_URL
+    _LLM_KEY = OPENROUTER_API_KEY
+elif HF_TOKEN:
+    LLM_BACKEND = "hf"
+    LLM_MODEL = os.getenv("MEDSUMM_LLM_MODEL", "meta-llama/Llama-3.1-8B-Instruct")
+    LLM_BASE_URL = HF_BASE_URL
+    _LLM_KEY = HF_TOKEN
+else:
+    LLM_BACKEND = None
+    LLM_MODEL = ""
+    LLM_BASE_URL = ""
+    _LLM_KEY = None
+
+LLM_ENABLED = _bool("MEDSUMM_LLM_ENABLED", True) and _LLM_KEY is not None
+LLM_TIMEOUT_S = float(os.getenv("MEDSUMM_LLM_TIMEOUT", "45"))
 LLM_MAX_TOKENS = int(os.getenv("MEDSUMM_LLM_MAX_TOKENS", "320"))
 LLM_TEMPERATURE = float(os.getenv("MEDSUMM_LLM_TEMPERATURE", "0.1"))
 

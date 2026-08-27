@@ -37,8 +37,11 @@ def detect_findings(text: str) -> list[dict]:
 
     findings: list[dict] = []
     # Dedupe by (tier, reason): if the same finding appears both affirmed and
-    # uncertain, keep the AFFIRMED one (stronger evidence wins).
+    # uncertain, keep the AFFIRMED one (stronger evidence wins). We also
+    # accumulate every matched text for a finding so downstream consumers
+    # (eval harness, UI) see all evidence, not just the first regex hit.
     best: dict[tuple[str, str], dict] = {}
+    matched_texts: dict[tuple[str, str], list[str]] = {}
 
     sentences = split_sentences(full_text)
     for sent in sentences:
@@ -48,10 +51,14 @@ def detect_findings(text: str) -> list[dict]:
                 if assertion == "negated":
                     continue  # safety: never escalate a negated finding
                 key = (tier, reason)
+                mt = m.group(0).strip()
+                bucket = matched_texts.setdefault(key, [])
+                if mt and mt not in bucket:
+                    bucket.append(mt)
                 entry = {
                     "tier": tier,
                     "reason": reason,
-                    "matched_text": m.group(0).strip(),
+                    "matched_text": mt,
                     "assertion": assertion,
                     "uncertain": assertion == "uncertain",
                     "sentence": sent.strip(),
@@ -59,7 +66,11 @@ def detect_findings(text: str) -> list[dict]:
                 prev = best.get(key)
                 if prev is None or (prev["uncertain"] and not entry["uncertain"]):
                     best[key] = entry
-    findings = list(best.values())
+
+    findings = []
+    for key, entry in best.items():
+        entry["matched_text"] = " | ".join(matched_texts.get(key, []))
+        findings.append(entry)
     return findings
 
 

@@ -13,7 +13,7 @@ explain the jargon — built as a **clinical NLP + safety evaluation** capstone.
 
 ## What it does
 
-Paste a radiology or pathology report and get:
+Paste a radiology or pathology report — or **upload the PDF** — and get:
 
 1. **Automated triage level** — one of four urgency tiers with concrete advice:
    - 🚨 **Critical** — seek immediate medical attention (PE, stroke, hemorrhage, dissection, torsion, cauda equina…)
@@ -21,11 +21,15 @@ Paste a radiology or pathology report and get:
    - 📅 **Routine** — discuss at next appointment (nodules, cysts, degenerative changes…)
    - ✅ **Benign** — normal / no urgent findings
 2. **Plain-language summary** — extractive, grounded in the source text.
-3. **Optional AI rewrite** — a safety-gated LLM layer that rewrites the summary
-   into plainer language, rejected if it drifts from the source.
+3. **Optional AI rewrite** — a safety-gated LLM layer (OpenRouter minimax-m3,
+   HF router fallback) that rewrites the summary into plainer language,
+   rejected if it drifts from the source.
 4. **Jargon glossary** — ~150 clinical terms defined in plain words, matched to
    the terms actually present in your report.
 5. **Measurements** — sizes/percentages extracted with context.
+6. **PDF upload** — drop in a text-layer PDF report; the server extracts the
+   text (pypdf, max 8 MB / 30 pages) and analyzes it. Scanned images are
+   rejected with a clear message.
 
 ## Architecture
 
@@ -75,17 +79,17 @@ triage. The LLM is cosmetic and gated — the app works fully with no LLM at all
 
 ## Safety evaluation (capstone angle)
 
-A 30-case labeled synthetic set (`eval/cases.json`) covers all four tiers plus
+A 47-case labeled synthetic set (`eval/cases.json`) covers all four tiers plus
 negation traps ("no PE", "no fracture") and uncertainty traps ("cannot exclude
 PE"). `eval/run_eval.py` scores the engine on every change:
 
 | Metric | Score |
 |---|---|
-| Triage tier accuracy (exact) | **100%** (30/30) |
+| Triage tier accuracy (exact) | **100%** (47/47) |
 | Within ±1 tier | **100%** |
-| Must-flag recall (sensitivity) | **100%** (26/26 critical findings caught) |
-| Negation safety (no false alarms) | **100%** (0/24 violations) |
-| Mean summary faithfulness | **91.2%** |
+| Must-flag recall (sensitivity) | **100%** (41/41 critical findings caught) |
+| Negation safety (no false alarms) | **100%** (0/27 violations) |
+| Mean summary faithfulness | **91.8%** |
 
 Results are bundled and served live at `/api/eval` and rendered in the
 **Safety evaluation** tab. Regenerate with `python -m eval.run_eval`.
@@ -96,6 +100,7 @@ Results are bundled and served live at `/api/eval` and rendered in the
 |---|---|---|
 | `/api/health` | GET | Liveness + config (LLM enabled, thresholds) |
 | `/api/analyze` | POST | `{report, use_llm}` → triage + summary + glossary |
+| `/api/extract-pdf` | POST | multipart PDF → extracted text (8 MB / 30 pages max) |
 | `/api/samples` | GET | 10 sample reports across all tiers |
 | `/api/eval` | GET | Bundled safety-evaluation results |
 
@@ -121,7 +126,8 @@ vercel deploy --prod
 ```
 
 `vercel.json` wires `api/index.py` (FastAPI ASGI) with `static/` + `data/`
-bundled. Optional LLM layer: set `HF_TOKEN` in Vercel env vars.
+bundled. Optional LLM layer: set `OPENROUTER_API_KEY` (preferred) or `HF_TOKEN`
+in Vercel env vars.
 
 ## Project layout
 

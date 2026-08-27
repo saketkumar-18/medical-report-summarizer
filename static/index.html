@@ -197,6 +197,8 @@
         <div class="row">
           <button class="btn" id="analyze-btn" onclick="analyze()">🔍 Summarize &amp; Triage</button>
           <button class="btn ghost" onclick="clearAll()">Clear</button>
+          <button class="btn ghost" id="pdf-btn" onclick="document.getElementById('pdf-input').click()">📄 Upload PDF</button>
+          <input type="file" id="pdf-input" accept=".pdf,application/pdf" style="display:none" onchange="uploadPdf(this)">
           <label style="font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;">
             <input type="checkbox" id="use-llm" checked> Plain-language AI rewrite
           </label>
@@ -290,6 +292,36 @@ function clearAll() {
   document.getElementById("result-cards").classList.add("hidden");
   document.getElementById("empty-state").classList.remove("hidden");
   document.getElementById("error-box").classList.add("hidden");
+}
+
+async function uploadPdf(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const btn = document.getElementById("pdf-btn");
+  const errBox = document.getElementById("error-box");
+  errBox.classList.add("hidden");
+  btn.disabled = true;
+  btn.textContent = "⏳ Reading PDF…";
+  try {
+    const fd = new FormData();
+    fd.append("file", file);
+    const resp = await fetch("/api/extract-pdf", { method: "POST", body: fd });
+    const data = await resp.json();
+    if (!resp.ok) {
+      errBox.textContent = data.detail || "Could not read the PDF.";
+      errBox.classList.remove("hidden");
+      return;
+    }
+    document.getElementById("report-input").value = data.text;
+    analyze();
+  } catch (e) {
+    errBox.textContent = "PDF upload failed: " + e.message;
+    errBox.classList.remove("hidden");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "📄 Upload PDF";
+    input.value = "";
+  }
 }
 
 function showError(msg) {

@@ -1,16 +1,16 @@
 {
   "description": "MedSumm safety evaluation results (deterministic engine).",
   "metrics": {
-    "n_cases": 30,
+    "n_cases": 47,
     "tier_accuracy_exact": 1.0,
     "tier_accuracy_within_one": 1.0,
     "must_flag_recall": 1.0,
-    "must_flag_hit": 26,
-    "must_flag_total": 26,
+    "must_flag_hit": 41,
+    "must_flag_total": 41,
     "negation_safety": 1.0,
     "must_not_flag_violations": 0,
-    "must_not_flag_total": 24,
-    "mean_faithfulness": 0.9117
+    "must_not_flag_total": 27,
+    "mean_faithfulness": 0.9181
   },
   "cases": [
     {
@@ -25,7 +25,7 @@
       "must_flag_missed": [],
       "must_not_flag_violations": [],
       "faithfulness": 1.0,
-      "n_findings": 2
+      "n_findings": 1
     },
     {
       "id": "eval-02-pe-negated",
@@ -78,7 +78,7 @@
       "must_flag_missed": [],
       "must_not_flag_violations": [],
       "faithfulness": 0.5,
-      "n_findings": 3
+      "n_findings": 2
     },
     {
       "id": "eval-06-mammo-birads4",
@@ -118,7 +118,7 @@
       "must_flag_missed": [],
       "must_not_flag_violations": [],
       "faithfulness": 1.0,
-      "n_findings": 2
+      "n_findings": 1
     },
     {
       "id": "eval-09-benign-biopsy",
@@ -144,7 +144,7 @@
       "must_flag_missed": [],
       "must_not_flag_violations": [],
       "faithfulness": 0.667,
-      "n_findings": 2
+      "n_findings": 1
     },
     {
       "id": "eval-11-normal-cxr",
@@ -171,7 +171,7 @@
       "must_flag_missed": [],
       "must_not_flag_violations": [],
       "faithfulness": 1.0,
-      "n_findings": 2
+      "n_findings": 1
     },
     {
       "id": "eval-13-aortic-dissection",
@@ -185,7 +185,7 @@
       "must_flag_missed": [],
       "must_not_flag_violations": [],
       "faithfulness": 1.0,
-      "n_findings": 2
+      "n_findings": 1
     },
     {
       "id": "eval-14-free-air",
@@ -200,7 +200,7 @@
       "must_flag_missed": [],
       "must_not_flag_violations": [],
       "faithfulness": 1.0,
-      "n_findings": 2
+      "n_findings": 1
     },
     {
       "id": "eval-15-dvt",
@@ -214,7 +214,7 @@
       "must_flag_missed": [],
       "must_not_flag_violations": [],
       "faithfulness": 1.0,
-      "n_findings": 2
+      "n_findings": 1
     },
     {
       "id": "eval-16-uncertain-pe",
@@ -297,7 +297,7 @@
       "must_flag_missed": [],
       "must_not_flag_violations": [],
       "faithfulness": 0.75,
-      "n_findings": 3
+      "n_findings": 2
     },
     {
       "id": "eval-22-fatty-liver-routine",
@@ -311,7 +311,7 @@
       "must_flag_missed": [],
       "must_not_flag_violations": [],
       "faithfulness": 1.0,
-      "n_findings": 2
+      "n_findings": 1
     },
     {
       "id": "eval-23-appendicitis",
@@ -325,7 +325,7 @@
       "must_flag_missed": [],
       "must_not_flag_violations": [],
       "faithfulness": 1.0,
-      "n_findings": 2
+      "n_findings": 1
     },
     {
       "id": "eval-24-metastatic",
@@ -339,7 +339,7 @@
       "must_flag_missed": [],
       "must_not_flag_violations": [],
       "faithfulness": 0.75,
-      "n_findings": 3
+      "n_findings": 2
     },
     {
       "id": "eval-25-postop-no-recurrence",
@@ -391,7 +391,7 @@
       "must_flag_missed": [],
       "must_not_flag_violations": [],
       "faithfulness": 0.667,
-      "n_findings": 2
+      "n_findings": 1
     },
     {
       "id": "eval-29-spine-degenerative",
@@ -415,6 +415,240 @@
       "within_one_tier": true,
       "must_flag_hit": [
         "cauda equina"
+      ],
+      "must_flag_missed": [],
+      "must_not_flag_violations": [],
+      "faithfulness": 1.0,
+      "n_findings": 1
+    },
+    {
+      "id": "eval-31-tension-pneumothorax",
+      "expected_tier": "critical",
+      "predicted_tier": "critical",
+      "exact_match": true,
+      "within_one_tier": true,
+      "must_flag_hit": [
+        "pneumothorax"
+      ],
+      "must_flag_missed": [],
+      "must_not_flag_violations": [],
+      "faithfulness": 1.0,
+      "n_findings": 1
+    },
+    {
+      "id": "eval-32-pneumothorax-negated",
+      "expected_tier": "benign",
+      "predicted_tier": "benign",
+      "exact_match": true,
+      "within_one_tier": true,
+      "must_flag_hit": [],
+      "must_flag_missed": [],
+      "must_not_flag_violations": [],
+      "faithfulness": 0.8,
+      "n_findings": 1
+    },
+    {
+      "id": "eval-33-ectopic-pregnancy",
+      "expected_tier": "critical",
+      "predicted_tier": "critical",
+      "exact_match": true,
+      "within_one_tier": true,
+      "must_flag_hit": [
+        "ectopic pregnancy"
+      ],
+      "must_flag_missed": [],
+      "must_not_flag_violations": [],
+      "faithfulness": 1.0,
+      "n_findings": 1
+    },
+    {
+      "id": "eval-34-cardiac-tamponade",
+      "expected_tier": "critical",
+      "predicted_tier": "critical",
+      "exact_match": true,
+      "within_one_tier": true,
+      "must_flag_hit": [
+        "tamponade"
+      ],
+      "must_flag_missed": [],
+      "must_not_flag_violations": [],
+      "faithfulness": 1.0,
+      "n_findings": 1
+    },
+    {
+      "id": "eval-35-bowel-ischemia",
+      "expected_tier": "critical",
+      "predicted_tier": "critical",
+      "exact_match": true,
+      "within_one_tier": true,
+      "must_flag_hit": [
+        "bowel ischemia"
+      ],
+      "must_flag_missed": [],
+      "must_not_flag_violations": [],
+      "faithfulness": 1.0,
+      "n_findings": 1
+    },
+    {
+      "id": "eval-36-acute-pancreatitis",
+      "expected_tier": "urgent",
+      "predicted_tier": "urgent",
+      "exact_match": true,
+      "within_one_tier": true,
+      "must_flag_hit": [
+        "pancreatitis"
+      ],
+      "must_flag_missed": [],
+      "must_not_flag_violations": [],
+      "faithfulness": 1.0,
+      "n_findings": 2
+    },
+    {
+      "id": "eval-37-acute-cholecystitis",
+      "expected_tier": "urgent",
+      "predicted_tier": "urgent",
+      "exact_match": true,
+      "within_one_tier": true,
+      "must_flag_hit": [
+        "cholecystitis"
+      ],
+      "must_flag_missed": [],
+      "must_not_flag_violations": [],
+      "faithfulness": 1.0,
+      "n_findings": 2
+    },
+    {
+      "id": "eval-38-pyelonephritis",
+      "expected_tier": "urgent",
+      "predicted_tier": "urgent",
+      "exact_match": true,
+      "within_one_tier": true,
+      "must_flag_hit": [
+        "pyelonephritis"
+      ],
+      "must_flag_missed": [],
+      "must_not_flag_violations": [],
+      "faithfulness": 0.75,
+      "n_findings": 2
+    },
+    {
+      "id": "eval-39-tirads5",
+      "expected_tier": "urgent",
+      "predicted_tier": "urgent",
+      "exact_match": true,
+      "within_one_tier": true,
+      "must_flag_hit": [
+        "TI-RADS 5"
+      ],
+      "must_flag_missed": [],
+      "must_not_flag_violations": [],
+      "faithfulness": 1.0,
+      "n_findings": 2
+    },
+    {
+      "id": "eval-40-pirads4",
+      "expected_tier": "urgent",
+      "predicted_tier": "urgent",
+      "exact_match": true,
+      "within_one_tier": true,
+      "must_flag_hit": [
+        "PI-RADS 4"
+      ],
+      "must_flag_missed": [],
+      "must_not_flag_violations": [],
+      "faithfulness": 1.0,
+      "n_findings": 1
+    },
+    {
+      "id": "eval-41-osteomyelitis",
+      "expected_tier": "urgent",
+      "predicted_tier": "urgent",
+      "exact_match": true,
+      "within_one_tier": true,
+      "must_flag_hit": [
+        "osteomyelitis"
+      ],
+      "must_flag_missed": [],
+      "must_not_flag_violations": [],
+      "faithfulness": 1.0,
+      "n_findings": 2
+    },
+    {
+      "id": "eval-42-atypical-cells",
+      "expected_tier": "urgent",
+      "predicted_tier": "urgent",
+      "exact_match": true,
+      "within_one_tier": true,
+      "must_flag_hit": [
+        "atypical"
+      ],
+      "must_flag_missed": [],
+      "must_not_flag_violations": [],
+      "faithfulness": 0.75,
+      "n_findings": 4
+    },
+    {
+      "id": "eval-43-pulmonary-edema",
+      "expected_tier": "urgent",
+      "predicted_tier": "urgent",
+      "exact_match": true,
+      "within_one_tier": true,
+      "must_flag_hit": [
+        "pulmonary edema"
+      ],
+      "must_flag_missed": [],
+      "must_not_flag_violations": [],
+      "faithfulness": 1.0,
+      "n_findings": 1
+    },
+    {
+      "id": "eval-44-sepsis",
+      "expected_tier": "critical",
+      "predicted_tier": "critical",
+      "exact_match": true,
+      "within_one_tier": true,
+      "must_flag_hit": [
+        "sepsis"
+      ],
+      "must_flag_missed": [],
+      "must_not_flag_violations": [],
+      "faithfulness": 0.75,
+      "n_findings": 3
+    },
+    {
+      "id": "eval-45-cannot-exclude-malignancy",
+      "expected_tier": "urgent",
+      "predicted_tier": "urgent",
+      "exact_match": true,
+      "within_one_tier": true,
+      "must_flag_hit": [
+        "malignancy"
+      ],
+      "must_flag_missed": [],
+      "must_not_flag_violations": [],
+      "faithfulness": 0.75,
+      "n_findings": 1
+    },
+    {
+      "id": "eval-46-no-malignancy-cleared",
+      "expected_tier": "benign",
+      "predicted_tier": "benign",
+      "exact_match": true,
+      "within_one_tier": true,
+      "must_flag_hit": [],
+      "must_flag_missed": [],
+      "must_not_flag_violations": [],
+      "faithfulness": 1.0,
+      "n_findings": 1
+    },
+    {
+      "id": "eval-47-stable-nodule-followup",
+      "expected_tier": "routine",
+      "predicted_tier": "routine",
+      "exact_match": true,
+      "within_one_tier": true,
+      "must_flag_hit": [
+        "nodule"
       ],
       "must_flag_missed": [],
       "must_not_flag_violations": [],

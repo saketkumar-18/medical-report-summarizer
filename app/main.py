@@ -14,7 +14,7 @@ import re
 import time
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -102,6 +102,7 @@ def health() -> dict:
         "version": app.version,
         "deployment": config.DEPLOYMENT,
         "llm_enabled": llm_available(),
+        "llm_backend": config.LLM_BACKEND if llm_available() else None,
         "llm_model": config.LLM_MODEL if llm_available() else None,
         "faithfulness_threshold": config.FAITHFULNESS_THRESHOLD,
     }
@@ -152,6 +153,56 @@ def analyze(req: AnalyzeRequest, request: Request) -> JSONResponse:
             "disclaimer": config.DISCLAIMER,
         }
     )
+
+
+# ---------------------------------------------------------------------------
+# PDF upload: extract text from a report PDF (pypdf), then the client sends
+# the extracted text to /api/analyze. Text-layer PDFs only; scanned images
+# are rejected with a clear message (no OCR dependency on serverless).
+# ---------------------------------------------------------------------------
+MAX_PDF_BYTES = 8 * 1024 * 1024  # 8 MB
+MAX_PDF_PAGES = 30
+
+
+@app.post("/api/extract-pdf")
+async def extract_pdf(file: UploadFile = File(...)) -> JSONResponse:
+    name = (file.filename or "").lower()
+    if not name.endswith(".pdf"):
+        raise HTTPException(status_code=422, detail="Please upload a PDF file (.pdf).")
+    raw = await file.read()
+    if len(raw) > MAX_PDF_BYTES:
+        raise HTTPException(status_code=413, detail="PDF too large (max 8 MB).")
+    if not raw.startswith(b"%PDF"):
+        raise HTTPException(status_code=422, detail="File does not look like a valid PDF.")
+
+    try:
+        from pypdf import PdfReader
+        import io
+
+        reader = PdfReader(io.BytesIO(raw))
+        if len(reader.pages) > MAX_PDF_PAGES:
+            raise HTTPException(status_code=422, detail=f"Too many pages (max {MAX_PDF_PAGES}).")
+        pages = []
+        for page in reader.pages:
+            try:
+                pages.append(page.extract_text() or "")
+            except Exception:
+                pages.append("")
+        text = "\n".join(pages).strip()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Could not read this PDF: {e}")
+
+    if len(text) < config.MIN_INPUT_CHARS:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "No readable text found in this PDF. It may be a scanned image — "
+                "please paste the report text instead."
+            ),
+        )
+    return JSONResponse({"text": text[:20000], "pages": len(reader.pages)})
 
 
 # ---------------------------------------------------------------------------

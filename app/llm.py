@@ -46,7 +46,7 @@ def _post_json(url: str, payload: dict, headers: dict, timeout: float) -> dict:
 
 
 def llm_available() -> bool:
-    return config.LLM_ENABLED and bool(config.HF_TOKEN)
+    return config.LLM_ENABLED and bool(config._LLM_KEY)
 
 
 def extract_entities(text: str) -> set[str]:
@@ -114,8 +114,12 @@ def generate_patient_summary(report: str, deterministic_bullets: list[str]) -> d
         return fallback
 
     try:
+        headers = {"Authorization": f"Bearer {config._LLM_KEY}"}
+        if config.LLM_BACKEND == "openrouter":
+            headers["HTTP-Referer"] = "https://medical-report-summarizer-phi.vercel.app"
+            headers["X-Title"] = "MedSumm"
         result = _post_json(
-            f"{config.HF_BASE_URL}/chat/completions",
+            f"{config.LLM_BASE_URL}/chat/completions",
             {
                 "model": config.LLM_MODEL,
                 "messages": [
@@ -132,7 +136,7 @@ def generate_patient_summary(report: str, deterministic_bullets: list[str]) -> d
                 "temperature": config.LLM_TEMPERATURE,
                 "max_tokens": config.LLM_MAX_TOKENS,
             },
-            headers={"Authorization": f"Bearer {config.HF_TOKEN}"},
+            headers=headers,
             timeout=config.LLM_TIMEOUT_S,
         )
         text = result["choices"][0]["message"]["content"].strip()
