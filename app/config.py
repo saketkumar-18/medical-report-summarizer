@@ -12,7 +12,11 @@ def _bool(name: str, default: bool) -> bool:
 DEPLOYMENT = os.getenv("MEDSUMM_DEPLOYMENT", "local").strip().lower()  # local | serverless
 
 # --- LLM backend (optional abstractive layer) --------------------------------
-# Preferred: OpenRouter (OpenAI-compatible). Fallback: Hugging Face router.
+# Priority: TokenRouter > OpenRouter > Hugging Face router (all OpenAI-compat).
+TOKENROUTER_API_KEY = os.getenv("TOKENROUTER_API_KEY", "").strip() or None
+TOKENROUTER_BASE_URL = os.getenv(
+    "TOKENROUTER_BASE_URL", "https://api.tokenrouter.com/v1"
+).rstrip("/")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip() or None
 OPENROUTER_BASE_URL = os.getenv(
     "OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"
@@ -20,7 +24,12 @@ OPENROUTER_BASE_URL = os.getenv(
 HF_TOKEN = os.getenv("HF_TOKEN", "").strip() or None
 HF_BASE_URL = os.getenv("HF_BASE_URL", "https://router.huggingface.co/v1").rstrip("/")
 
-if OPENROUTER_API_KEY:
+if TOKENROUTER_API_KEY:
+    LLM_BACKEND = "tokenrouter"
+    LLM_MODEL = os.getenv("MEDSUMM_LLM_MODEL", "qwen/qwen3.8-max-free")
+    LLM_BASE_URL = TOKENROUTER_BASE_URL
+    _LLM_KEY = TOKENROUTER_API_KEY
+elif OPENROUTER_API_KEY:
     LLM_BACKEND = "openrouter"
     LLM_MODEL = os.getenv("MEDSUMM_LLM_MODEL", "minimax/minimax-m3:free")
     LLM_BASE_URL = OPENROUTER_BASE_URL
@@ -38,7 +47,7 @@ else:
 
 LLM_ENABLED = _bool("MEDSUMM_LLM_ENABLED", True) and _LLM_KEY is not None
 LLM_TIMEOUT_S = float(os.getenv("MEDSUMM_LLM_TIMEOUT", "45"))
-LLM_MAX_TOKENS = int(os.getenv("MEDSUMM_LLM_MAX_TOKENS", "320"))
+LLM_MAX_TOKENS = int(os.getenv("MEDSUMM_LLM_MAX_TOKENS", "600"))
 LLM_TEMPERATURE = float(os.getenv("MEDSUMM_LLM_TEMPERATURE", "0.1"))
 
 # --- Safety gates ------------------------------------------------------------

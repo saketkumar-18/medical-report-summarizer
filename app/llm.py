@@ -76,7 +76,7 @@ def faithfulness_score(source: str, summary: str) -> float:
 
 def _build_prompt(report: str, deterministic_bullets: list[str]) -> str:
     bullets = "\n".join(f"- {b}" for b in deterministic_bullets)
-    return f"""You are a careful medical communication assistant. Rewrite the
+    prompt = f"""You are a careful medical communication assistant. Rewrite the
 following machine-extracted summary of a radiology/pathology report into 2-4
 short, plain sentences a patient can understand.
 
@@ -97,6 +97,11 @@ ORIGINAL REPORT (for reference only):
 {report[:3000]}
 
 PLAIN-LANGUAGE REWRITE (2-4 sentences):"""
+    # Qwen-family reasoning models spend their whole token budget on internal
+    # thinking unless asked not to; /no_think keeps the rewrite fast and cheap.
+    if config.LLM_BACKEND == "tokenrouter":
+        prompt += "\n/no_think"
+    return prompt
 
 
 def generate_patient_summary(report: str, deterministic_bullets: list[str]) -> dict:

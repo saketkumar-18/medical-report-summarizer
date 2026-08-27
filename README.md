@@ -21,9 +21,9 @@ Paste a radiology or pathology report — or **upload the PDF** — and get:
    - 📅 **Routine** — discuss at next appointment (nodules, cysts, degenerative changes…)
    - ✅ **Benign** — normal / no urgent findings
 2. **Plain-language summary** — extractive, grounded in the source text.
-3. **Optional AI rewrite** — a safety-gated LLM layer (OpenRouter minimax-m3,
-   HF router fallback) that rewrites the summary into plainer language,
-   rejected if it drifts from the source.
+3. **Optional AI rewrite** — a safety-gated LLM layer (TokenRouter
+   qwen3.8-max-free, OpenRouter/HF fallbacks) that rewrites the summary into
+   plainer language, rejected if it drifts from the source.
 4. **Jargon glossary** — ~150 clinical terms defined in plain words, matched to
    the terms actually present in your report.
 5. **Measurements** — sizes/percentages extracted with context.
@@ -126,8 +126,8 @@ vercel deploy --prod
 ```
 
 `vercel.json` wires `api/index.py` (FastAPI ASGI) with `static/` + `data/`
-bundled. Optional LLM layer: set `OPENROUTER_API_KEY` (preferred) or `HF_TOKEN`
-in Vercel env vars.
+bundled. Optional LLM layer: set `TOKENROUTER_API_KEY` (preferred),
+`OPENROUTER_API_KEY`, or `HF_TOKEN` in Vercel env vars.
 
 ## Project layout
 
