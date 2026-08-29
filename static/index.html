@@ -197,8 +197,8 @@
         <div class="row">
           <button class="btn" id="analyze-btn" onclick="analyze()">🔍 Summarize &amp; Triage</button>
           <button class="btn ghost" onclick="clearAll()">Clear</button>
-          <button class="btn ghost" id="pdf-btn" onclick="document.getElementById('pdf-input').click()">📄 Upload PDF</button>
-          <input type="file" id="pdf-input" accept=".pdf,application/pdf" style="display:none" onchange="uploadPdf(this)">
+          <button class="btn ghost" id="pdf-btn" onclick="document.getElementById('pdf-input').click()">📄 Upload Report</button>
+          <input type="file" id="pdf-input" accept=".pdf,.txt,.md,image/*" style="display:none" onchange="uploadPdf(this)">
           <label style="font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;">
             <input type="checkbox" id="use-llm" checked> Plain-language AI rewrite
           </label>
@@ -294,6 +294,137 @@ function clearAll() {
   document.getElementById("error-box").classList.add("hidden");
 }
 
+// ---------------------------------------------------------------------------
+// Client-side document reading — the report file NEVER leaves the device.
+//   PDF with text layer  -> pdf.js extracts text (any file size)
+//   Scanned PDF / photo -> rendered to canvas + tesseract.js OCR (on-device)
+//   .txt / .md          -> read directly
+// Only the extracted TEXT is sent to /api/analyze, so Vercel's ~4.5 MB
+// request-body cap can never break an upload, and scanned hospital reports
+// (which used to fail with "Request Entity Too Large") now work end-to-end.
+// ---------------------------------------------------------------------------
+const PDFJS_VERSION = "3.11.174";
+const PDFJS_CDN = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.min.js`;
+const PDFJS_WORKER = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.worker.min.js`;
+const TESS_CDN = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[data-src="${src}"]`)) return resolve();
+    const s = document.createElement("script");
+    s.src = src;
+    s.dataset.src = src;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error("Could not load a required library. Check your connection."));
+    document.head.appendChild(s);
+  });
+}
+
+// A scanned page is suspected when extracted text is too sparse.
+function looksLikeScan(text) {
+  const chars = text.replace(/\s+/g, "").length;
+  return chars < 120; // a real findings section has far more
+}
+
+async function extractPdfText(file, onProgress) {
+  await loadScript(PDFJS_CDN);
+  pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+  const buf = await file.arrayBuffer();
+  const doc = await pdfjsLib.getDocument({ data: buf }).promise;
+  const MAX_PAGES = 30;
+  const pages = Math.min(doc.numPages, MAX_PAGES);
+  let text = "";
+  const pageTexts = [];
+  for (let i = 1; i <= pages; i++) {
+    onProgress?.(`Reading page ${i}/${pages}…`);
+    const page = await doc.getPage(i);
+    const content = await page.getTextContent();
+    // Reconstruct lines by Y position for a natural reading order.
+    const items = content.items.map(it => ({
+      y: it.transform[5],
+      x: it.transform[4],
+      str: it.str,
+      eol: it.hasEOL,
+    }));
+    let last = null;
+    let pageText = "";
+    for (const it of items) {
+      if (last && Math.abs(it.y - last.y) > 2) pageText += "\n";
+      pageText += it.str;
+      if (it.eol) pageText += "\n";
+      last = it;
+    }
+    pageTexts.push(pageText.trim());
+  }
+  text = pageTexts.join("\n\n").trim();
+  return { text, pages, scanned: pages > 0 && looksLikeScan(text) };
+}
+
+async function ocrImages(file, onProgress) {
+  // OCR for scanned PDFs (page canvases) or photos (jpg/png directly)
+  await loadScript(TESS_CDN);
+  const images = [];
+  if (file.type === "application/pdf" || /\.pdf$/i.test(file.name)) {
+    await loadScript(PDFJS_CDN);
+    pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+    const buf = await file.arrayBuffer();
+    const doc = await pdfjsLib.getDocument({ data: buf }).promise;
+    const pages = Math.min(doc.numPages, 30);
+    for (let i = 1; i <= pages; i++) {
+      onProgress?.(`Preparing page ${i}/${pages}…`);
+      const page = await doc.getPage(i);
+      const scale = 2; // 2x for OCR accuracy
+      const vp = page.getViewport({ scale });
+      const canvas = document.createElement("canvas");
+      canvas.width = vp.width;
+      canvas.height = vp.height;
+      await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise;
+      images.push({ canvas, label: `page ${i}/${pages}` });
+    }
+  } else {
+    images.push({ canvas: await imageToCanvas(file), label: "image" });
+  }
+  let text = "";
+  for (const img of images) {
+    onProgress?.(`OCR ${img.label}… (this can take a minute)`);
+    const { data } = await Tesseract.recognize(img.canvas, "eng", {
+      logger: m => { if (m.status === "recognizing text") onProgress?.(`OCR ${img.label}… ${Math.round(m.progress * 100)}%`); },
+    });
+    text += data.text.trim() + "\n\n";
+  }
+  return text.trim();
+}
+
+// Clean extracted text so it can never trip the API's input guards:
+// OCR/PDF text often contains form feeds and other control characters.
+function cleanExtractedText(t) {
+  t = (t || "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\f/g, "\n")                       // form feed -> newline (page break)
+    .replace(/[\x00-\x08\x0b\x0e-\x1f]/g, " ") // other control chars -> space
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\n{3,}/g, "\n\n");
+  if (t.length > 20000) t = t.slice(0, 20000);  // API max
+  return t.trim();
+}
+
+function imageToCanvas(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.getContext("2d").drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      resolve(canvas);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Could not read the image file.")); };
+    img.src = url;
+  });
+}
+
 async function uploadPdf(input) {
   const file = input.files && input.files[0];
   if (!file) return;
@@ -301,25 +432,37 @@ async function uploadPdf(input) {
   const errBox = document.getElementById("error-box");
   errBox.classList.add("hidden");
   btn.disabled = true;
-  btn.textContent = "⏳ Reading PDF…";
+  btn.textContent = "⏳ Reading report…";
   try {
-    const fd = new FormData();
-    fd.append("file", file);
-    const resp = await fetch("/api/extract-pdf", { method: "POST", body: fd });
-    const data = await resp.json();
-    if (!resp.ok) {
-      errBox.textContent = data.detail || "Could not read the PDF.";
-      errBox.classList.remove("hidden");
-      return;
+    let raw = "";
+    if (file.type === "text/plain" || /\.(txt|md)$/i.test(file.name)) {
+      btn.textContent = "⏳ Reading text file…";
+      raw = await file.text();
+    } else if (file.type === "application/pdf" || /\.pdf$/i.test(file.name)) {
+      const r = await extractPdfText(file, m => { btn.textContent = "⏳ " + m; });
+      if (r.scanned) {
+        // No text layer — it's a scan. OCR each page on-device.
+        raw = await ocrImages(file, m => { btn.textContent = "⏳ " + m; });
+        if (!raw) throw new Error("No readable text found even after OCR. Try pasting the report text instead.");
+      } else {
+        raw = r.text;
+      }
+    } else if (file.type.startsWith("image/")) {
+      raw = await ocrImages(file, m => { btn.textContent = "⏳ " + m; });
+      if (!raw) throw new Error("Could not read text from the image.");
+    } else {
+      throw new Error("Unsupported file type. Upload a PDF, photo, or text file.");
     }
-    document.getElementById("report-input").value = data.text;
+    const text = cleanExtractedText(raw);
+    if (text.length < 60) throw new Error("Could not read enough text from this file — it may be blank or corrupted. Try pasting the report text instead.");
+    document.getElementById("report-input").value = text;
     analyze();
   } catch (e) {
-    errBox.textContent = "PDF upload failed: " + e.message;
+    errBox.textContent = "Upload failed: " + e.message;
     errBox.classList.remove("hidden");
   } finally {
     btn.disabled = false;
-    btn.textContent = "📄 Upload PDF";
+    btn.textContent = "📄 Upload Report";
     input.value = "";
   }
 }
@@ -345,7 +488,16 @@ async function analyze() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ report, use_llm: useLlm }),
     });
-    const data = await r.json();
+    // Guard: any non-JSON response (e.g. a proxy plain-text error page) must
+    // produce a readable message, never "Unexpected token ... is not valid JSON".
+    const raw = await r.text();
+    let data = null;
+    try { data = JSON.parse(raw); }
+    catch {
+      throw new Error(
+        `Server returned an unreadable response (HTTP ${r.status}). ${raw.slice(0, 140)} — please try again.`
+      );
+    }
     if (!r.ok) { showError(data.detail || "Analysis failed."); return; }
     renderResults(data);
   } catch (e) {

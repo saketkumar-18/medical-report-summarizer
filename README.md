@@ -27,9 +27,12 @@ Paste a radiology or pathology report — or **upload the PDF** — and get:
 4. **Jargon glossary** — ~150 clinical terms defined in plain words, matched to
    the terms actually present in your report.
 5. **Measurements** — sizes/percentages extracted with context.
-6. **PDF upload** — drop in a text-layer PDF report; the server extracts the
-   text (pypdf, max 8 MB / 30 pages) and analyzes it. Scanned images are
-   rejected with a clear message.
+6. **Report file upload (works for scanned hospital PDFs)** — the file is
+   read **entirely in your browser**: PDFs with a text layer are parsed with
+   pdf.js (any file size), scanned PDFs and phone photos are OCR'd on-device
+   with tesseract.js, and `.txt`/`.md` files are read directly. The raw file
+   never leaves your device — only the extracted text is sent for analysis —
+   so there is no upload size limit and no server round-trip that can fail.
 
 ## Architecture
 
@@ -100,7 +103,7 @@ Results are bundled and served live at `/api/eval` and rendered in the
 |---|---|---|
 | `/api/health` | GET | Liveness + config (LLM enabled, thresholds) |
 | `/api/analyze` | POST | `{report, use_llm}` → triage + summary + glossary |
-| `/api/extract-pdf` | POST | multipart PDF → extracted text (8 MB / 30 pages max) |
+| `/api/extract-pdf` | POST | (legacy) multipart PDF → extracted text. The frontend now reads PDFs/scans client-side; kept for API users. |
 | `/api/samples` | GET | 10 sample reports across all tiers |
 | `/api/eval` | GET | Bundled safety-evaluation results |
 
